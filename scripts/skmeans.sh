@@ -6,7 +6,7 @@ then
 	exit
 fi
 
-BASEDIR=/home/gangulyd/research/fastclustering/
+BASEDIR=/home/ivan/Documentos/
 DATADIR=$BASEDIR/trecmblog-index/
 SRCDIR=$BASEDIR/LuceneClusterer/src/
 RESDIR=$BASEDIR/clustering-outputs/

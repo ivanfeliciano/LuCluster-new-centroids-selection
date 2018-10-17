@@ -23,6 +23,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+
 /**
  *
  * @author Debasis
@@ -40,6 +44,7 @@ public class TrecMblogIndexer {
     IndexWriter writer;
     Analyzer analyzer;
     List<String> stopwords;
+    Boolean flag = false;
 
     protected List<String> buildStopwordList(String stopwordFileName) {
         List<String> stopwords = new ArrayList<>();
@@ -120,38 +125,61 @@ public class TrecMblogIndexer {
         System.out.println("Indexing file: " + file.getName());
         
         StringBuffer txtbuff = new StringBuffer();
-        while ((line = br.readLine()) != null)
-            txtbuff.append(line).append("\n");
+        line = null;
+        while ((line = br.readLine()) != null) {
+            JSONParser parser =   new JSONParser();
+            JSONObject json = (JSONObject) parser.parse(line);
+            if (!this.flag) {
+            System.out.println("++++++++++++++++++++");
+            System.out.println(json.get("text")); this.flag = true;
+            System.out.println("++++++++++++++++++++");
+            }
+            doc = constructDoc(json);
+            if (doc != null) {
+                writer.addDocument(doc);
+            }
+        }
+        
+           /* txtbuff.append(line).append("\n");
         String content = txtbuff.toString();
-
         org.jsoup.nodes.Document jdoc = Jsoup.parse(content);
-        Elements docElts = jdoc.select("DOC");
-
-        for (Element docElt : docElts) {
+        org.jsoup.select.Elements jdocBodyElement =  jdoc.select("body");
+        */
+        //
+        
+        //Elements docElts = jdoc.select("body");
+        
+        /*for (Element docElt : docElts) {
             doc = constructDoc(docElt);
             if (doc != null)
                 writer.addDocument(doc);
-        }
+        }*/
     }
     
-    Document constructDoc(Element docElt) throws Exception {
-        Element docIdElt = docElt.select("DOCNO").first();
-        Element docTextElt = docElt.select("TEXT").first();
-        Element docTimeElt = docElt.select("tweettime").first();
-        Element docTimeStringElt = docElt.select("time").first();
-        Element docUserElt = docElt.select("username").first();
+    Document constructDoc(JSONObject docElt) throws Exception {
+        
+        Object docIdElt = docElt.get("id_str");
+        Object docTextElt = docElt.get("text");
+        Object docTimeElt = docElt.get("created_at");
+        Object docTimeStringElt = docElt.get("created_at");
+        JSONObject JSONuser = (JSONObject) docElt.get("user");
+        Object docUserElt;
+        docUserElt = JSONuser.get("screen_name");
         
         Document doc = new Document();
-        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeElt.text(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_DOCNO, docIdElt.text(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_TIME, docTimeStringElt.text(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt.text(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_DOCNO, docIdElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_TIME, docTimeStringElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         
-        String content = docTextElt.text().trim();
+        System.out.println("Agrego nuevo doc");
+        System.out.print(docIdElt);
+        
+        String content = docTextElt.toString();
         if (content.equals("null"))
             return null;
         
-        doc.add(new Field(WMTIndexer.FIELD_ANALYZED_CONTENT, docTextElt.text(),
+        doc.add(new Field(WMTIndexer.FIELD_ANALYZED_CONTENT, docTextElt.toString(),
                 Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES));
         return doc;
     }
@@ -164,7 +192,7 @@ public class TrecMblogIndexer {
         }
 
         try {
-            TrecMblogIndexer indexer = new TrecMblogIndexer(args[0]);
+            TrecMblogIndexer indexer = new TrecMblogIndexer("tweets.properties");
             indexer.processAll();
         }
         catch (Exception ex) {
