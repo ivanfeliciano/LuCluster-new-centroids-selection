@@ -62,6 +62,7 @@ public final class ClusterEvaluator {
 
         br.close();
         fr.close();
+        System.out.println("Termina de inicializar mapa de ids de clusters");
     }
 
     void init(Properties prop) throws Exception {
@@ -93,11 +94,15 @@ public final class ClusterEvaluator {
     }
 
     void initStats(long[][] clusterClassMatrix) throws Exception {
-
+        String domainIdWithDoubleQuotes;
+        String domainIdWODoubleQuotes;
         // Compute freq of each cluster id
         for (int i = 0; i < numDocs; i++) {
+            domainIdWithDoubleQuotes = reader.document(i).get(WMTIndexer.FIELD_DOMAIN_ID);
+            domainIdWODoubleQuotes = domainIdWithDoubleQuotes.replaceAll("^\"|\"$", "");
             int k = clusterIdMap.get(i);
-            int j = Integer.parseInt(reader.document(i).get(WMTIndexer.FIELD_DOMAIN_ID));
+            int j = Integer.parseInt(domainIdWODoubleQuotes);
+            System.out.printf("initStats %d %d", k, j);
             clusterClassMatrix[k][j]++;
         }
         initSums(clusterClassMatrix);
@@ -267,8 +272,8 @@ public final class ClusterEvaluator {
             System.out.println("NMI: " + ceval.computeNMI());
             System.out.println("RI: " + ceval.computeRandIndex());
                    
-          /*  ClusterEvaluator ceval = new ClusterEvaluator();
-            ceval.testFunctionalities();*/
+        ClusterEvaluator ceval2 = new ClusterEvaluator();
+        ceval2.testFunctionalities();
             
         } catch (Exception ex) {
             ex.printStackTrace();

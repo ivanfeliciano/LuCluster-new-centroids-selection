@@ -45,6 +45,7 @@ public class TrecMblogIndexer {
     Analyzer analyzer;
     List<String> stopwords;
     Boolean flag = false;
+    int docIdx = 0;
 
     protected List<String> buildStopwordList(String stopwordFileName) {
         List<String> stopwords = new ArrayList<>();
@@ -115,7 +116,7 @@ public class TrecMblogIndexer {
                 indexFile(f);
         }
     }
-
+    
     void indexFile(File file) throws Exception {
         FileReader fr = new FileReader(file);
         BufferedReader br = new BufferedReader(fr);
@@ -127,14 +128,14 @@ public class TrecMblogIndexer {
         StringBuffer txtbuff = new StringBuffer();
         line = null;
         while ((line = br.readLine()) != null) {
-            JSONParser parser =   new JSONParser();
+            /*JSONParser parser =   new JSONParser();
             JSONObject json = (JSONObject) parser.parse(line);
-            if (!this.flag) {
-            System.out.println("++++++++++++++++++++");
-            System.out.println(json.get("text")); this.flag = true;
-            System.out.println("++++++++++++++++++++");
-            }
             doc = constructDoc(json);
+            if (doc != null) {
+                writer.addDocument(doc);
+            }*/
+            String[] tweetFromCSV = line.split(",");
+            doc = constructDoc(tweetFromCSV);
             if (doc != null) {
                 writer.addDocument(doc);
             }
@@ -156,24 +157,49 @@ public class TrecMblogIndexer {
         }*/
     }
     
+    Document constructDoc(String[] tweetCSV) throws Exception {
+        Document doc = new Document();
+        String docDomainName = tweetCSV[0];
+        String docTimeStringElt = tweetCSV[1];
+        String docTimeElt = tweetCSV[2];
+        String docUserElt = tweetCSV[4];
+        String docTextElt = tweetCSV[5];
+        doc.add(new Field(WMTIndexer.FIELD_DOMAIN_ID, docDomainName, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeStringElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_DOCNO, String.valueOf(docIdx++), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+        
+        System.out.println("Agrego nuevo doc ");
+        System.out.println(docIdx - 1);
+        
+        String content = docTextElt;
+        if (content.equals("null"))
+            return null;
+        
+        doc.add(new Field(WMTIndexer.FIELD_ANALYZED_CONTENT, docTextElt,
+                Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES));
+        return doc;
+    }
+    
     Document constructDoc(JSONObject docElt) throws Exception {
         
-        Object docIdElt = docElt.get("id_str");
+        //Object docIdElt = docIdx++;
         Object docTextElt = docElt.get("text");
         Object docTimeElt = docElt.get("created_at");
-        Object docTimeStringElt = docElt.get("created_at");
+        Object docTimeStringElt = docElt.get("id_str");
         JSONObject JSONuser = (JSONObject) docElt.get("user");
         Object docUserElt;
         docUserElt = JSONuser.get("screen_name");
         
         Document doc = new Document();
-        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_DOCNO, docIdElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_TIME, docTimeStringElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeStringElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_DOCNO, String.valueOf(docIdx++), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt.toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         
-        System.out.println("Agrego nuevo doc");
-        System.out.print(docIdElt);
+        System.out.println("Agrego nuevo doc ");
+        System.out.println(docIdx - 1);
         
         String content = docTextElt.toString();
         if (content.equals("null"))

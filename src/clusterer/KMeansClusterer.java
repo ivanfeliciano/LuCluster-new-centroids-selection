@@ -9,13 +9,16 @@ import indexer.WMTIndexer;
 import java.util.HashMap;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.util.BytesRef;
 
 /**
  *
  * @author Debasis
  */
 public class KMeansClusterer extends LuceneClusterer {
-
+    
+    boolean flag = true;
     
     public KMeansClusterer(String propFile) throws Exception {
         super(propFile);
@@ -32,9 +35,17 @@ public class KMeansClusterer extends LuceneClusterer {
             centroidDocIds.put(selectedDoc, null);
            
 			TermVector centroid = TermVector.extractAllDocTerms(reader, selectedDoc, contentFieldName, lambda);
+                        
 			if (centroid != null) {
 				System.out.println("Len of selected centroid " + numClustersAssigned + " = " + centroid.termStatsList.size());
-            	centroidVecs[numClustersAssigned++] = centroid;            
+            	centroidVecs[numClustersAssigned++] = centroid;
+                            for (TermStats ts : centroid.termStatsList) {
+                                System.out.println(ts.term);
+                                System.out.println(ts.idf);
+                                System.out.println(ts.ntf);
+                                System.out.println(ts.wt);
+                                System.out.println(ts.tf);
+                            }
 			}
         }
 
@@ -64,14 +75,17 @@ public class KMeansClusterer extends LuceneClusterer {
         
         for (TermVector centroidVec : centroidVecs) {
 			if (centroidVec == null) {
-        		//System.out.println("Skipping cluster assignment for empty doc: " + docId);
+        		System.out.println("Skipping cluster assignment for empty doc: " + docId);
 				return (int)(Math.random()*K);
         	}
+            
             sim = docVec.cosineSim(centroidVec);
-
+            
+            
             if (sim > maxSim) {
                 maxSim = sim;
                 mostSimClusterId = clusterId;
+                System.out.printf("\nAl doc %d se le asigna el centroide %d \n", docId, clusterId);
             }
             clusterId++;
         }
@@ -136,6 +150,7 @@ public class KMeansClusterer extends LuceneClusterer {
             
             boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "false"));
             if (eval) {
+                System.out.println("Voy a evaluar");
                 ClusterEvaluator ceval = new ClusterEvaluator(args[0]);
                 System.out.println("Purity: " + ceval.computePurity());
                 System.out.println("NMI: " + ceval.computeNMI());            

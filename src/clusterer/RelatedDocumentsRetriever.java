@@ -58,6 +58,8 @@ public class RelatedDocumentsRetriever {
     float qSelLambda;
     float queryToDocRatio;
         
+    
+    
     public RelatedDocumentsRetriever(IndexReader reader, int docId, Properties prop, int clusterId) throws IOException {
         this.reader = reader;
         this.docId = docId;
@@ -117,7 +119,7 @@ public class RelatedDocumentsRetriever {
         if (repTerms == null)
             return null;
 
-	System.out.println("Selected " + repTerms.termStatsList.size() + " terms for query");
+        System.out.println("Selected " + repTerms.termStatsList.size() + " terms for query");
 
         for (TermStats ts : repTerms.termStatsList) {
             queryDocument.add(new TermQuery(new Term(contentFieldName, ts.term)), BooleanClause.Occur.SHOULD);
@@ -125,13 +127,14 @@ public class RelatedDocumentsRetriever {
         
         relatedDocs = searcher.search(queryDocument, numWanted);
         relatedDocs = normalize(relatedDocs);
+        int counter = 0;
         
         docScoreMap = new HashMap<>();
         for (ScoreDoc sd : relatedDocs.scoreDocs) {
             docScoreMap.put(sd.doc, sd);
         }
         
-        //System.out.println("#related docs = " + docScoreMap.size());
+//        System.out.println("#related docs = " + docScoreMap.size());
         return relatedDocs;
     }
     

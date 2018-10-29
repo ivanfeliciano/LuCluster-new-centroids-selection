@@ -37,21 +37,28 @@ import org.apache.lucene.search.ScoreDoc;
  *
  * @author dganguly
  */
-public class FastKMedoidsClusterer extends LuceneClusterer {
+public class FPACWithMCentroids extends LuceneClusterer {
     IndexSearcher searcher;
     RelatedDocumentsRetriever[] rdes;
+    
+    
+    //Estos son los grupos de centroides
+    RelatedDocumentsRetriever[][] CentroidsGroups;
     
     // Un conjunto de términos para cada cluster
     
     Set<String>[] listSetOfTermsForEachCluster;
     
-    public FastKMedoidsClusterer(String propFile) throws Exception {
+    public FPACWithMCentroids(String propFile) throws Exception {
         super(propFile);
         
         searcher = new IndexSearcher(reader);
         searcher.setSimilarity(new BM25Similarity());        
         rdes = new RelatedDocumentsRetriever[K];
         listSetOfTermsForEachCluster = new HashSet[K];
+        
+        // Inicia estructura que guarda los centroides
+        CentroidsGroups = new RelatedDocumentsRetriever[K][numberOfCentroidsByGroup];                
     }
     
     int selectDoc(HashSet<String> queryTerms) throws IOException {
@@ -71,26 +78,33 @@ public class FastKMedoidsClusterer extends LuceneClusterer {
     // Initialize centroids
     // The idea is to select a random document. Grow a region around it and choose
     // as the next candidate centroid a document that does not belong to this region.
+    // Same but with several centroids for each cluster
+    // With the top list we select the most similar docs from an initial selected doc
+    // at each iteration
     @Override
     void initCentroids() throws Exception {
         int selectedDoc = (int)(Math.random()*numDocs);
         int numClusterCentresAssigned = 1;
         centroidDocIds = new HashMap<>();
+        int idxCentroidsGroup = 0;
         
         do {
             RelatedDocumentsRetriever rde = new RelatedDocumentsRetriever(reader, selectedDoc, prop, numClusterCentresAssigned);
-            System.out.println("Chosen doc " + selectedDoc + " as centroid number " + numClusterCentresAssigned);
-            TopDocs topDocs = rde.getRelatedDocs(numDocs/K);
-            if (topDocs == null) {
+            TopDocs topDocs = rde.getRelatedDocs(numberOfCentroidsByGroup);
+            if (topDocs == null || topDocs.scoreDocs.length < numberOfCentroidsByGroup) {
                 selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
                 continue;
             }
-            centroidDocIds.put(selectedDoc, null);
+            for (ScoreDoc docFromTopDocs : topDocs.scoreDocs) {
+                centroidDocIds.put(docFromTopDocs.doc, null);
+                CentroidsGroups[numClusterCentresAssigned - 1][idxCentroidsGroup] = new RelatedDocumentsRetriever(reader, 
+                        docFromTopDocs.doc, prop, numClusterCentresAssigned);
+                System.out.println("Chosen doc " + docFromTopDocs.doc + " as centroid number " + numClusterCentresAssigned);
+            
+            }        
             selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
-            rdes[numClusterCentresAssigned-1] = rde;
             numClusterCentresAssigned++;
-        }
-        while (numClusterCentresAssigned <= K);        
+        } while (numClusterCentresAssigned <= K);        
     }
     
     void showCentroids() throws Exception {
@@ -167,10 +181,12 @@ public class FastKMedoidsClusterer extends LuceneClusterer {
         }
         
         try {
-            LuceneClusterer fkmc = new FastKMedoidsClusterer(args[0]);
-            fkmc.cluster();
+            LuceneClusterer fkmc = new FPACWithMCentroids(args[0]);
+            //fkmc.cluster();
+            fkmc.resetAllClusterIds();
+            fkmc.initCentroids();
             
-            boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "true"));
+            boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "false"));
             if (eval) {
                 ClusterEvaluator ceval = new ClusterEvaluator(args[0]);
                 System.out.println("Purity: " + ceval.computePurity());

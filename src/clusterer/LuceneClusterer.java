@@ -34,6 +34,7 @@ public abstract class LuceneClusterer {
     HashMap<Integer, Byte> centroidDocIds;
     TermVector[] centroidVecs;
     float lambda;
+    int numberOfCentroidsByGroup;
 
     public LuceneClusterer(String propFile) throws Exception {
         prop = new Properties();
@@ -43,10 +44,18 @@ public abstract class LuceneClusterer {
         
         reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath()));
         numDocs = reader.numDocs();
+        System.out.println("numDocs++++++++++++++++++++++++");
+        System.out.println(numDocs);
         K = Integer.parseInt(prop.getProperty("numclusters", "200"));
-        contentFieldName = prop.getProperty("content.field_name", WMTIndexer.FIELD_ANALYZED_CONTENT);        
+        
+        // Init el número de centroids por grupo
+        numberOfCentroidsByGroup = Integer.parseInt(prop.getProperty("numberOfCentroidsByGroup", "5"));
+        
+        contentFieldName = prop.getProperty("content.field_name", WMTIndexer.FIELD_ANALYZED_CONTENT);
+        System.out.println("ContentFieldName = " + contentFieldName);
         idFieldName = prop.getProperty("id.field_name", WMTIndexer.FIELD_URL);        
-        refFieldName = prop.getProperty("ref.field_name", WMTIndexer.FIELD_DOMAIN_ID);
+        //refFieldName = prop.getProperty("ref.field_name", WMTIndexer.FIELD_DOMAIN_ID);
+        refFieldName = prop.getProperty("ref.field_name", "none");
         if (refFieldName.equals("none"))
             refFieldName = null;
         

@@ -112,7 +112,7 @@ public class WMTIndexer {
     }
 
     void indexFile(int domainId, File file, File dir) throws Exception {
-        
+        System.out.println("estoy usando la función de WMTIndexer");
         System.out.println("Indexing file: " + file.getName());
         
         InputStream fileStream = new FileInputStream(file);
@@ -126,9 +126,11 @@ public class WMTIndexer {
             String[] tokens = line.split("\\t");
             if (tokens.length < 6)
                 continue;
-            if (!tokens[0].equals("en"))
+            if (!tokens[0].equals("en")) {
+                System.out.println("No es una cadena en ingles");
+                System.out.println(Arrays.toString(tokens));
                 continue; // index only English documents
-                        
+            }
             String decodedContent = decodeBase64(tokens[5]);
             doc = constructDoc(tokens[3], String.valueOf(domainId), decodedContent, 0);
             writer.addDocument(doc);
