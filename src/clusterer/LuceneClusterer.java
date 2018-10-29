@@ -44,15 +44,13 @@ public abstract class LuceneClusterer {
         
         reader = DirectoryReader.open(FSDirectory.open(indexDir.toPath()));
         numDocs = reader.numDocs();
-        System.out.println("numDocs++++++++++++++++++++++++");
+        System.out.println("Number of documents");
         System.out.println(numDocs);
         K = Integer.parseInt(prop.getProperty("numclusters", "200"));
         
         // Init el número de centroids por grupo
         numberOfCentroidsByGroup = Integer.parseInt(prop.getProperty("numberOfCentroidsByGroup", "5"));
-        
         contentFieldName = prop.getProperty("content.field_name", WMTIndexer.FIELD_ANALYZED_CONTENT);
-        System.out.println("ContentFieldName = " + contentFieldName);
         idFieldName = prop.getProperty("id.field_name", WMTIndexer.FIELD_URL);        
         //refFieldName = prop.getProperty("ref.field_name", WMTIndexer.FIELD_DOMAIN_ID);
         refFieldName = prop.getProperty("ref.field_name", "none");
@@ -71,21 +69,17 @@ public abstract class LuceneClusterer {
     abstract int getClosestCluster(int docId) throws Exception;    
     abstract void showCentroids() throws Exception;
     
-    public void cluster() throws Exception {
-        
-		long gstart, gend, start, end;
-
-		gstart = System.currentTimeMillis();
-
+    public void cluster() throws Exception {        
+        long gstart, gend, start, end;
+        gstart = System.currentTimeMillis();
         resetAllClusterIds();
         initCentroids();
-        
         int maxIters = Integer.parseInt(prop.getProperty("maxiters", "20"));
         float stopThreshold = Float.parseFloat(prop.getProperty("stopthreshold", "0.1"));
         float changeRatio;
         
         for (int i=1; i <= maxIters; i++) {
-	    	start = System.currentTimeMillis();
+	    start = System.currentTimeMillis();
 
             System.out.println("Iteration : " + i);
             showCentroids();
@@ -99,23 +93,21 @@ public abstract class LuceneClusterer {
             //    break;
             //}
             recomputeCentroids();
-
-			end = System.currentTimeMillis();
-			System.out.println("Time to run till " + i + " iterations: " + (end-start)/1000 + " seconds");
-
-			//saveClusterIds(i);
+            end = System.currentTimeMillis();
+            System.out.println("Time to run till " + i + " iterations: " + (end-start)/1000 + " seconds");
+            //saveClusterIds(i);
         }
-		gend = System.currentTimeMillis();
-		System.out.println("Time to cluster: " + (gend-gstart)/1000 + " seconds");
+        gend = System.currentTimeMillis();
+        System.out.println("Time to cluster: " + (gend-gstart)/1000 + " seconds");
 
         saveClusterIds(0);  // the global one
         reader.close();
     }
     
     void saveClusterIds(int iter) throws Exception {
-		String fileName = prop.getProperty("cluster.idfile");
-		if (iter > 0)
-			fileName += "." + iter;
+        String fileName = prop.getProperty("cluster.idfile");
+        if (iter > 0)
+                fileName += "." + iter;
         FileWriter fw = new FileWriter(fileName);
         BufferedWriter bw = new BufferedWriter(fw);
         
@@ -160,8 +152,8 @@ public abstract class LuceneClusterer {
             if (isCentroid(i))
                 continue;
             
-            Document d = reader.document(i);            
-            String thisUrl = d.get(idFieldName);
+//            Document d = reader.document(i);            
+//            String thisUrl = d.get(idFieldName);
             int clusterId = getClosestCluster(i);
             if (assignClusterId(i, clusterId))
                 numChanged++;  // cluster id got changed

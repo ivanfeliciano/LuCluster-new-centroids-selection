@@ -89,6 +89,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
         int idxCentroidsGroup = 0;
         
         do {
+            idxCentroidsGroup = 0;
             RelatedDocumentsRetriever rde = new RelatedDocumentsRetriever(reader, selectedDoc, prop, numClusterCentresAssigned);
             TopDocs topDocs = rde.getRelatedDocs(numberOfCentroidsByGroup);
             if (topDocs == null || topDocs.scoreDocs.length < numberOfCentroidsByGroup) {
@@ -97,29 +98,33 @@ public class FPACWithMCentroids extends LuceneClusterer {
             }
             for (ScoreDoc docFromTopDocs : topDocs.scoreDocs) {
                 centroidDocIds.put(docFromTopDocs.doc, null);
-                CentroidsGroups[numClusterCentresAssigned - 1][idxCentroidsGroup] = new RelatedDocumentsRetriever(reader, 
+                CentroidsGroups[numClusterCentresAssigned - 1][idxCentroidsGroup++] = new RelatedDocumentsRetriever(reader, 
                         docFromTopDocs.doc, prop, numClusterCentresAssigned);
-                System.out.println("Chosen doc " + docFromTopDocs.doc + " as centroid number " + numClusterCentresAssigned);
-            
+//                System.out.println("Chosen doc " + docFromTopDocs.doc + " as centroid number " + numClusterCentresAssigned);
             }        
             selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
             numClusterCentresAssigned++;
         } while (numClusterCentresAssigned <= K);        
     }
     
+    @Override
     void showCentroids() throws Exception {
-        int i = 0;
-        for (RelatedDocumentsRetriever rde: rdes) {
-            Document doc = rde.queryDoc;
-            System.out.println("Centroid " + (i++) + ": " + doc.get(WMTIndexer.FIELD_DOMAIN_ID) + ", " + doc.get(idFieldName));
+        for (int i = 0, j = 1; i < K; i++) {
+            System.out.println("Cluster " +  (i + 1) + " has the centroids:");
+            for (RelatedDocumentsRetriever rde: CentroidsGroups[i]) {
+                Document doc = rde.queryDoc;
+                System.out.println("Centroid " + ((j++) % (numberOfCentroidsByGroup + 1)) + ": " + doc.get(WMTIndexer.FIELD_DOMAIN_ID) + ", " + doc.get(idFieldName));
+            }
         }
     }
     
     @Override
     boolean isCentroid(int docId) {
         for (int i=0; i < K; i++) {
-            if (rdes[i].docId == docId)
-                return true;
+            for (RelatedDocumentsRetriever rde : CentroidsGroups[i]) {
+                if (rde.docId == docId)
+                    return true;
+            }
         }
         return false;
     }
@@ -128,19 +133,25 @@ public class FPACWithMCentroids extends LuceneClusterer {
     int getClosestCluster(int docId) throws Exception { // O(K) computation...
         float maxScore = 0;
         int clusterId = 0;
+        int similarCentroidInCluster = 0;
+        float localScore = 0;
         for (int i=0; i < K; i++) {
-            if (rdes[i].docScoreMap == null)
-                continue;
-            ScoreDoc sd = rdes[i].docScoreMap.get(docId);
-            // aquí debes guardar también en cuantos de los centroides del cluster aparece
-            // maxAparacionesEnCentroides
-            // entonces necesito otro FOR donde guarde el maxScore para un grupo de centroides
-            // y cuantas veces aparece para ir actualizando el clusterId
-            if (sd != null) {
-                if (sd.score > maxScore) {
-                    maxScore = sd.score;
-                    clusterId = i;
+            similarCentroidInCluster = 0;
+            for (RelatedDocumentsRetriever rde : CentroidsGroups[i]) {
+                if (rde.docScoreMap == null)
+                    continue;
+                ScoreDoc sd = rdes[i].docScoreMap.get(docId);
+                // aquí debes guardar también en cuantos de los centroides del cluster aparece
+                // maxAparacionesEnCentroides
+                // entonces necesito otro FOR donde guarde el maxScore para un grupo de centroides
+                // y cuantas veces aparece para ir actualizando el clusterId
+                if (sd != null) {
+                    localScore +=  sd.score;
                 }
+            }
+            if (localScore > maxScore) {
+                maxScore = localScore;
+                clusterId = i;
             }
         }
         if (maxScore == 0) {
@@ -153,7 +164,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
     // Returns true if the cluster id is changed...
     @Override
     boolean assignClusterId(int docId, int clusterId) throws Exception {
-        rdes[clusterId].addDocId(docId);        
+        CentroidsGroups[clusterId][0].addDocId(docId);        
         return super.assignClusterId(docId, clusterId);
     }
         
@@ -185,6 +196,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
             //fkmc.cluster();
             fkmc.resetAllClusterIds();
             fkmc.initCentroids();
+            fkmc.showCentroids();
             
             boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "false"));
             if (eval) {
