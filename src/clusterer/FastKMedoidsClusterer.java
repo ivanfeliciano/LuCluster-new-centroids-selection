@@ -167,10 +167,11 @@ public class FastKMedoidsClusterer extends LuceneClusterer {
         }
         
         try {
-            LuceneClusterer fkmc = new FastKMedoidsClusterer(args[0]);
-            fkmc.cluster();
-            
-            boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "true"));
+//            LuceneClusterer fkmc = new FastKMedoidsClusterer(args[0]);
+//            fkmc.cluster();
+//            
+//            boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "true"));
+            boolean eval = true;
             if (eval) {
                 ClusterEvaluator ceval = new ClusterEvaluator(args[0]);
                 System.out.println("Purity: " + ceval.computePurity());
