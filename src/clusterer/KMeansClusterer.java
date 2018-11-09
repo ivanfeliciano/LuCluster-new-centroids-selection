@@ -37,23 +37,23 @@ public class KMeansClusterer extends LuceneClusterer {
 			TermVector centroid = TermVector.extractAllDocTerms(reader, selectedDoc, contentFieldName, lambda);
                         
 			if (centroid != null) {
-				System.out.println("Len of selected centroid " + numClustersAssigned + " = " + centroid.termStatsList.size());
+//				System.out.println("Len of selected centroid " + numClustersAssigned + " = " + centroid.termStatsList.size());
             	centroidVecs[numClustersAssigned++] = centroid;
-                            for (TermStats ts : centroid.termStatsList) {
-                                System.out.println(ts.term);
-                                System.out.println(ts.idf);
-                                System.out.println(ts.ntf);
-                                System.out.println(ts.wt);
-                                System.out.println(ts.tf);
-                            }
+//                            for (TermStats ts : centroid.termStatsList) {
+//                                System.out.println(ts.term);
+//                                System.out.println(ts.idf);
+//                                System.out.println(ts.ntf);
+//                                System.out.println(ts.wt);
+//                                System.out.println(ts.tf);
+//                            }
 			}
         }
 
-		System.out.println("Size of initial cluster centres....");
-		for (int i=0; i < numClustersAssigned; i++) {
-			TermVector cv = centroidVecs[i];
-			System.out.println("Len of center " + i + " = " + cv.termStatsList.size());
-		}
+//		System.out.println("Size of initial cluster centres....");
+//		for (int i=0; i < numClustersAssigned; i++) {
+//			TermVector cv = centroidVecs[i];
+//			System.out.println("Len of center " + i + " = " + cv.termStatsList.size());
+//		}
     }
     
     @Override
@@ -85,7 +85,7 @@ public class KMeansClusterer extends LuceneClusterer {
             if (sim > maxSim) {
                 maxSim = sim;
                 mostSimClusterId = clusterId;
-                System.out.printf("\nAl doc %d se le asigna el centroide %d \n", docId, clusterId);
+//                System.out.printf("\nAl doc %d se le asigna el centroide %d \n", docId, clusterId);
             }
             clusterId++;
         }

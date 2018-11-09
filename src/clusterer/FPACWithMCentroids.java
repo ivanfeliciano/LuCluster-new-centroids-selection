@@ -9,13 +9,18 @@ import indexer.WMTIndexer;
 import static indexer.WMTIndexer.FIELD_ANALYZED_CONTENT;
 import static indexer.WMTIndexer.FIELD_DOMAIN_ID;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -117,6 +122,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
     void showCentroids() throws Exception {
         for (int i = 0, j = 1; i < K; i++) {
             System.out.println("Cluster " +  (i + 1) + " has the centroids:");
+            j = 1;
             for (RelatedDocumentsRetriever rde: CentroidsGroups[i]) {
                 Document doc = rde.queryDoc;
                 System.out.println("Centroid " + ((j++) % (numberOfCentroidsByGroup + 1)) + ": " + doc.get(WMTIndexer.FIELD_DOMAIN_ID) + ", " + doc.get(idFieldName));
@@ -164,7 +170,8 @@ public class FPACWithMCentroids extends LuceneClusterer {
     // Returns true if the cluster id is changed...
     @Override
     boolean assignClusterId(int docId, int clusterId) throws Exception {
-//        CentroidsGroups[clusterId][0].addDocId(docId);        
+        for (int i = 0; i < numberOfCentroidsByGroup; i++)
+            CentroidsGroups[clusterId][i].addDocId(docId);
         return super.assignClusterId(docId, clusterId);
     }
         
@@ -209,7 +216,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
         
         // Por cada cluster
         for (int cluster = 0; cluster < K; cluster++) {
-            System.out.println("Calculando en cluster " + cluster);
+            //System.out.println("Calculando en cluster " + cluster);
             HashSet<String> clusterVocabulary = clustersVocabulary.get(cluster);
             int idx = 0;
             Set<String> intersection = new HashSet<>();
@@ -217,11 +224,18 @@ public class FPACWithMCentroids extends LuceneClusterer {
             int maxCover = 0;
             int bestDocId = 0;
             while (!clusterVocabulary.isEmpty() && idx < numberOfCentroidsByGroup) {
-                System.out.println("Calculando en centroide " + (idx));
+//                System.out.println("Vocabulario actual del cluster " + cluster);
+//                for (String s: clusterVocabulary) {
+//                    System.out.print(s + ", ");
+//                }
+//                System.out.println();
+//                
+//                System.out.println("Calculando el centroide " + (idx));
                 maxCover = 0;
                 // Por cada documento en este cluster
-                for (int docId = 0; docId < docsInEachCluster.get(cluster).size(); docId++) {
+                for (int clusterDocsIdx = 0; clusterDocsIdx < docsInEachCluster.get(cluster).size(); clusterDocsIdx++) {
                     Set<String> docVocabulary = new HashSet<>();
+                    int docId = docsInEachCluster.get(cluster).get(clusterDocsIdx);
                     tfvector = reader.getTermVector(docId, contentFieldName);
                     if (tfvector == null || tfvector.size() == 0)
                         continue;
@@ -237,6 +251,11 @@ public class FPACWithMCentroids extends LuceneClusterer {
                         bestDocId = docId;
                     }
                 }
+//                System.out.println("El documento que maximiza la intersección es " + bestDocId + " y contiene los términos");
+//                for(String s: bestDoc) {
+//                    System.out.print(s + ", ");
+//                }
+//                System.out.println();
                 clusterVocabulary.removeAll(bestDoc);
                 CentroidsGroups[cluster][idx++] = new RelatedDocumentsRetriever(reader, bestDocId, prop, cluster + 1);
             }
@@ -246,6 +265,13 @@ public class FPACWithMCentroids extends LuceneClusterer {
     
     public static void main(String[] args) {
         float changeRatio = 0;
+        PrintStream out;
+        try {
+            out = new PrintStream(new FileOutputStream("logsFPACMCentroids.txt"));
+            System.setOut(out);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(FPACWithMCentroids.class.getName()).log(Level.SEVERE, null, ex);
+        }
         if (args.length == 0) {
             args = new String[1];
             System.out.println("Usage: java FastKMedoidsClusterer <prop-file>");
@@ -255,15 +281,6 @@ public class FPACWithMCentroids extends LuceneClusterer {
         try {
             LuceneClusterer fkmc = new FPACWithMCentroids(args[0]);
             fkmc.cluster();
-//            fkmc.resetAllClusterIds();
-//            fkmc.initCentroids();
-//            fkmc.showCentroids();
-//            System.out.println("Reassigning cluster ids to non-centroid docs...");
-//            changeRatio = fkmc.assignClusterIds();
-//            
-//            System.out.println(changeRatio + " fraction of the documents reassigned different clusters...");
-//            fkmc.recomputeCentroids();
-//            fkmc.showCentroids();
             boolean eval = Boolean.parseBoolean(fkmc.getProperties().getProperty("eval", "true"));
             if (eval) {
                 ClusterEvaluator ceval = new ClusterEvaluator(args[0]);

@@ -101,7 +101,7 @@ public final class ClusterEvaluator {
             domainIdWithDoubleQuotes = reader.document(i).get(WMTIndexer.FIELD_DOMAIN_ID);
             domainIdWODoubleQuotes = domainIdWithDoubleQuotes.replaceAll("^\"|\"$", "");
             int k = clusterIdMap.get(i);
-            int j = Integer.parseInt(domainIdWODoubleQuotes) / 4;
+            int j = Integer.parseInt(domainIdWODoubleQuotes);
 //            System.out.printf("initStats %d %d", k, j);
             clusterClassMatrix[k][j]++;
         }

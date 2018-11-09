@@ -82,7 +82,9 @@ public abstract class LuceneClusterer {
 	    start = System.currentTimeMillis();
 
             System.out.println("Iteration : " + i);
-            showCentroids();
+            if (i ==  1 || i % 20 == 0) {
+                showCentroids();
+            }
             
             System.out.println("Reassigning cluster ids to non-centroid docs...");
             changeRatio = assignClusterIds();
@@ -96,6 +98,10 @@ public abstract class LuceneClusterer {
             end = System.currentTimeMillis();
             System.out.println("Time to run till " + i + " iterations: " + (end-start)/1000 + " seconds");
             //saveClusterIds(i);
+            if (i ==  1 || i % 50 == 0) {
+                gend = System.currentTimeMillis();
+                System.out.println("Global time until this iteration: " + (gend-gstart)/1000 + " seconds");
+            }
         }
         gend = System.currentTimeMillis();
         System.out.println("Time to cluster: " + (gend-gstart)/1000 + " seconds");
