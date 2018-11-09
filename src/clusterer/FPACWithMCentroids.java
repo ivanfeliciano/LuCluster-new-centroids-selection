@@ -55,7 +55,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
     
     //Estos son los grupos de centroides
     RelatedDocumentsRetriever[][] CentroidsGroups;
-    
+    TermVector[][] termVectorCentroids;
     // Un conjunto de términos para cada cluster
     
     Set<String>[] listSetOfTermsForEachCluster;
@@ -107,6 +107,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
                 continue;
             }
             centroidDocIds.put(selectedDoc, null);
+            TermVector centroid = TermVector.extractAllDocTerms(reader, selectedDoc, contentFieldName, lambda);
             selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
             CentroidsGroups[numClusterCentresAssigned-1][0] = rde;
             numClusterCentresAssigned++;
@@ -181,7 +182,41 @@ public class FPACWithMCentroids extends LuceneClusterer {
         }
         return clusterId;
     }
-    
+    int getClosestClusterNotAssignedDoc(int docId) throws Exception {
+        TermVector docVec = TermVector.extractAllDocTerms(reader, docId, contentFieldName, lambda);
+		if (docVec == null) {
+        	//System.out.println("Skipping cluster assignment for empty doc: " + docId);
+			return (int)(Math.random()*K);
+        }
+
+        float maxSim = 0, sim = 0;
+        int mostSimClusterId = 0;
+        int clusterId = 0;
+        
+//        for (int i = 0; i < K; i++) {
+//            for (RelatedDocumentsRetriever rde : CentroidsGroups[i]){
+//                TermVector centroidVec = rde.
+//            }
+//        }
+        for (TermVector centroidVec : centroidVecs) {
+			if (centroidVec == null) {
+        		System.out.println("Skipping cluster assignment for empty doc: " + docId);
+				return (int)(Math.random()*K);
+        	}
+            
+            sim = docVec.cosineSim(centroidVec);
+            
+            
+            if (sim > maxSim) {
+                maxSim = sim;
+                mostSimClusterId = clusterId;
+//                System.out.printf("\nAl doc %d se le asigna el centroide %d \n", docId, clusterId);
+            }
+            clusterId++;
+        }
+        
+        return mostSimClusterId;
+    }
     // Returns true if the cluster id is changed...
     @Override
     boolean assignClusterId(int docId, int clusterId) throws Exception {
