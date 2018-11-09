@@ -132,6 +132,7 @@ public class FastKMedoidsClusterer extends LuceneClusterer {
         if (maxScore == 0) {
             // Retrieved in none... Assign to a random cluster id
             clusterId = (int)(Math.random()*K);
+            numberOfDocsAssginedRandomly++;
         }
         return clusterId;
     }

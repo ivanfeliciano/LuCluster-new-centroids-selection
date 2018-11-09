@@ -35,6 +35,7 @@ public abstract class LuceneClusterer {
     TermVector[] centroidVecs;
     float lambda;
     int numberOfCentroidsByGroup;
+    int numberOfDocsAssginedRandomly = 0;
 
     public LuceneClusterer(String propFile) throws Exception {
         prop = new Properties();
@@ -95,6 +96,8 @@ public abstract class LuceneClusterer {
             //    break;
             //}
             recomputeCentroids();
+            System.out.println("numberOfDocsAssigendRandomly = " + numberOfDocsAssginedRandomly);
+            numberOfDocsAssginedRandomly = 0;
             end = System.currentTimeMillis();
             System.out.println("Time to run till " + i + " iterations: " + (end-start)/1000 + " seconds");
             //saveClusterIds(i);

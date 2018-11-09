@@ -134,7 +134,7 @@ public class RelatedDocumentsRetriever {
             docScoreMap.put(sd.doc, sd);
         }
         
-//        System.out.println("#related docs = " + docScoreMap.size());
+        //System.out.println("#related docs = " + docScoreMap.size());
         return relatedDocs;
     }
     
