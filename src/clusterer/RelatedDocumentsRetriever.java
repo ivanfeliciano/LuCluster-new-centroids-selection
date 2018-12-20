@@ -119,7 +119,7 @@ public class RelatedDocumentsRetriever {
         if (repTerms == null)
             return null;
 
-        System.out.println("Selected " + repTerms.termStatsList.size() + " terms for query");
+//        System.out.println("Selected " + repTerms.termStatsList.size() + " terms for query");
 
         for (TermStats ts : repTerms.termStatsList) {
             queryDocument.add(new TermQuery(new Term(contentFieldName, ts.term)), BooleanClause.Occur.SHOULD);

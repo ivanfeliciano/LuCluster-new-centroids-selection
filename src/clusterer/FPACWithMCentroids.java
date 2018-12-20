@@ -69,7 +69,8 @@ public class FPACWithMCentroids extends LuceneClusterer {
         listSetOfTermsForEachCluster = new HashSet[K];
         
         // Inicia estructura que guarda los centroides
-        CentroidsGroups = new RelatedDocumentsRetriever[K][numberOfCentroidsByGroup];                
+        CentroidsGroups = new RelatedDocumentsRetriever[K][numberOfCentroidsByGroup];
+        termVectorCentroids =  new TermVector[K][numberOfCentroidsByGroup];
     }
     
     int selectDoc(HashSet<String> queryTerms) throws IOException {
@@ -100,7 +101,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
         int idxCentroidsGroup;
         do {
             RelatedDocumentsRetriever rde = new RelatedDocumentsRetriever(reader, selectedDoc, prop, numClusterCentresAssigned);
-            System.out.println("Chosen doc " + selectedDoc + " as centroid number " + numClusterCentresAssigned);
+            System.out.println("Chosen doc " + selectedDoc + " as first centroid for cluster " + numClusterCentresAssigned);
             TopDocs topDocs = rde.getRelatedDocs(numDocs/K);
             if (topDocs == null) {
                 selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
@@ -110,6 +111,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
             TermVector centroid = TermVector.extractAllDocTerms(reader, selectedDoc, contentFieldName, lambda);
             selectedDoc = rde.getUnrelatedDocument(centroidDocIds);
             CentroidsGroups[numClusterCentresAssigned-1][0] = rde;
+            termVectorCentroids[numClusterCentresAssigned-1][0] = centroid;
             numClusterCentresAssigned++;
         } while (numClusterCentresAssigned <= K);
         
@@ -127,6 +129,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
                 ScoreDoc docFromTopDocs = topDocs.scoreDocs[i];
                 centroidDocIds.put(docFromTopDocs.doc, null);
                 CentroidsGroups[clusterIdx][idxCentroidsGroup] = new RelatedDocumentsRetriever(reader, docFromTopDocs.doc, prop, numClusterCentresAssigned);
+                termVectorCentroids[clusterIdx][idxCentroidsGroup] = TermVector.extractAllDocTerms(reader, docFromTopDocs.doc, contentFieldName, lambda);
                 CentroidsGroups[clusterIdx][idxCentroidsGroup++].getRelatedDocs(numDocs / K);
             }
         }
@@ -176,44 +179,38 @@ public class FPACWithMCentroids extends LuceneClusterer {
         }
         if (maxScore == 0) {
             // Retrieved in none... Assign to a random cluster id
-            clusterId = (int)(Math.random()*K);
+            //clusterId = (int)(Math.random()*K);
             //System.out.println("Asigno aleatoriamente al doc " + docId + " al cluster " + clusterId);
-            numberOfDocsAssginedRandomly++;
+            clusterId = getClosestClusterNotAssignedDoc(docId);
+            
         }
         return clusterId;
     }
     int getClosestClusterNotAssignedDoc(int docId) throws Exception {
         TermVector docVec = TermVector.extractAllDocTerms(reader, docId, contentFieldName, lambda);
-		if (docVec == null) {
-        	//System.out.println("Skipping cluster assignment for empty doc: " + docId);
-			return (int)(Math.random()*K);
+        if (docVec == null) {
+            System.out.println("Skipping cluster assignment for empty doc, because the docs is empty: " + docId);
+            numberOfDocsAssginedRandomly++;
+            return (int)(Math.random()*K);
         }
 
         float maxSim = 0, sim = 0;
         int mostSimClusterId = 0;
         int clusterId = 0;
-        
-//        for (int i = 0; i < K; i++) {
-//            for (RelatedDocumentsRetriever rde : CentroidsGroups[i]){
-//                TermVector centroidVec = rde.
-//            }
-//        }
-        for (TermVector centroidVec : centroidVecs) {
-			if (centroidVec == null) {
-        		System.out.println("Skipping cluster assignment for empty doc: " + docId);
-				return (int)(Math.random()*K);
-        	}
-            
-            sim = docVec.cosineSim(centroidVec);
-            
-            
-            if (sim > maxSim) {
-                maxSim = sim;
-                mostSimClusterId = clusterId;
-//                System.out.printf("\nAl doc %d se le asigna el centroide %d \n", docId, clusterId);
+        for(int i = 0; i < K; i++)
+            for (TermVector centroidVec : termVectorCentroids[i]) {
+                if (centroidVec == null) {
+                    numberOfDocsAssginedRandomly++;
+                    System.out.println("Skipping cluster assignment for empty doc because there is an empty centroid: " + docId);
+                    return (int)(Math.random()*K);            
+                }
+                clusterId = i;
+                sim = docVec.cosineSim(centroidVec);
+                if (sim > maxSim) {
+                    maxSim = sim;
+                    mostSimClusterId = clusterId;
+                }
             }
-            clusterId++;
-        }
         
         return mostSimClusterId;
     }
@@ -308,6 +305,7 @@ public class FPACWithMCentroids extends LuceneClusterer {
 //                System.out.println();
                 clusterVocabulary.removeAll(bestDoc);
                 CentroidsGroups[cluster][idx] = new RelatedDocumentsRetriever(reader, bestDocId, prop, cluster + 1);
+                termVectorCentroids[cluster][idx] = TermVector.extractAllDocTerms(reader, bestDocId, contentFieldName, lambda);
                 CentroidsGroups[cluster][idx++].getRelatedDocs(numDocs / K);
             }
             if (clusterVocabulary.isEmpty()) { System.out.println("Cubrí el vocabulario con " + idx + " centroides"); }

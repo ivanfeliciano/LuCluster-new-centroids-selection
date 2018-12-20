@@ -66,21 +66,12 @@ public final class TermVector {
             termStats.add(new TermStats(termText, tf, reader));            
             docLen += tf;
         }
-        /*
-        if (queryToDocRatio == 1) {
-            // if all terms are to be selected skip the weighting and the
-            // sorting steps.
-            System.out.println("Estoy en el error de hace rato para el dic");
-            System.out.println(docId);
-            for (TermStats ts : termStats) {
-                System.out.println(ts.term);
-                System.out.println(ts.idf);
-                System.out.println(ts.ntf);
-                System.out.println(ts.wt);
-                System.out.println(ts.tf);
-            }
-            return new TermVector(termStats);
-        }*/
+        
+//        if (queryToDocRatio == 1) {
+//            // if all terms are to be selected skip the weighting and the
+//            // sorting steps.
+//            return new TermVector(termStats);
+//        }
         
         for (TermStats ts : termStats) {
             ts.computeWeight(docLen, lambda);

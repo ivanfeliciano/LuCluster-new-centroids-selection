@@ -91,10 +91,10 @@ public abstract class LuceneClusterer {
             changeRatio = assignClusterIds();
             
             System.out.println(changeRatio + " fraction of the documents reassigned different clusters...");
-            //if (changeRatio < stopThreshold) {
-            //    System.out.println("Stopping after " + i + " iterations...");
-            //    break;
-            //}
+            if (changeRatio < stopThreshold) {
+                System.out.println("Stopping after " + i + " iterations...");
+                break;
+            }
             recomputeCentroids();
             System.out.println("numberOfDocsAssigendRandomly = " + numberOfDocsAssginedRandomly);
             numberOfDocsAssginedRandomly = 0;

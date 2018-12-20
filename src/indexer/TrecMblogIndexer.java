@@ -156,19 +156,45 @@ public class TrecMblogIndexer {
                 writer.addDocument(doc);
         }*/
     }
+//    
+//    Document constructDoc(String[] tweetCSV) throws Exception {
+//        Document doc = new Document();
+//        String docDomainName = tweetCSV[0];
+//        String docTimeStringElt = tweetCSV[1];
+//        String docTimeElt = tweetCSV[2];
+//        String docUserElt = tweetCSV[4];
+//        String docTextElt = tweetCSV[5];
+//        doc.add(new Field(WMTIndexer.FIELD_DOMAIN_ID, docDomainName, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(WMTIndexer.FIELD_URL, docTimeStringElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(TweetFields.FIELD_DOCNO, String.valueOf(docIdx++), Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        
+//        System.out.println("Agrego nuevo doc ");
+//        System.out.println(docIdx - 1);
+//        
+//        String content = docTextElt;
+//        if (content.equals("null"))
+//            return null;
+//        
+//        doc.add(new Field(WMTIndexer.FIELD_ANALYZED_CONTENT, docTextElt,
+//                Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES));
+//        return doc;
+//    }
+//    
     
     Document constructDoc(String[] tweetCSV) throws Exception {
         Document doc = new Document();
-        String docDomainName = tweetCSV[0];
-        String docTimeStringElt = tweetCSV[1];
-        String docTimeElt = tweetCSV[2];
-        String docUserElt = tweetCSV[4];
-        String docTextElt = tweetCSV[5];
+        String docDomainName = tweetCSV[1];
+        String docTimeStringElt = tweetCSV[0];
+//        String docTimeElt = tweetCSV[2];
+//        String docUserElt = tweetCSV[4];
+        String docTextElt = tweetCSV[2];
         doc.add(new Field(WMTIndexer.FIELD_DOMAIN_ID, docDomainName, Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field(WMTIndexer.FIELD_URL, docTimeStringElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field(TweetFields.FIELD_DOCNO, String.valueOf(docIdx++), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
+//        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
         
         System.out.println("Agrego nuevo doc ");
         System.out.println(docIdx - 1);
@@ -181,6 +207,7 @@ public class TrecMblogIndexer {
                 Field.Store.YES, Field.Index.ANALYZED, Field.TermVector.YES));
         return doc;
     }
+    
     
     Document constructDoc(JSONObject docElt) throws Exception {
         

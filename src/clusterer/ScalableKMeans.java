@@ -111,7 +111,7 @@ public class ScalableKMeans extends FastKMedoidsClusterer {
         if (args.length == 0) {
             args = new String[1];
             System.out.println("Usage: java ScalableKMeans <prop-file>");
-            args[0] = "tweets.properties";
+            args[0] = "init_0.properties";
         }
         
         try {

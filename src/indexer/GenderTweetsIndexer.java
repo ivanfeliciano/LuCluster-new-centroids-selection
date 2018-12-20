@@ -134,11 +134,16 @@ public class GenderTweetsIndexer {
             if (doc != null) {
                 writer.addDocument(doc);
             }*/
-            String[] tweetFromCSV = line.split(",");
-            doc = constructDoc(tweetFromCSV);
-            if (doc != null) {
-                writer.addDocument(doc);
+            try {
+                String[] tweetFromCSV = line.split(",");
+                doc = constructDoc(tweetFromCSV);
+                if (doc != null) {
+                    writer.addDocument(doc);
+                }    
+            } catch (Exception e) {
+                continue;
             }
+            
         }
         
            /* txtbuff.append(line).append("\n");
@@ -159,16 +164,17 @@ public class GenderTweetsIndexer {
     
     Document constructDoc(String[] tweetCSV) throws Exception {
         Document doc = new Document();
-        String docDomainName = tweetCSV[0];
-        String docTimeStringElt = tweetCSV[1];
-        String docTimeElt = tweetCSV[2];
-        String docUserElt = tweetCSV[4];
-        String docTextElt = tweetCSV[5];
+        String docDomainName = tweetCSV[5];
+        if("male".equals(docDomainName)) docDomainName = "0";
+        else if("female".equals(docDomainName)) docDomainName = "1";
+        else if("brand".equals(docDomainName)) docDomainName = "2";
+        else if("unknown".equals(docDomainName)) docDomainName = "3";
+        else { return null;}
+        String docTimeStringElt = tweetCSV[0];
+        String docTextElt = tweetCSV[19];
         doc.add(new Field(WMTIndexer.FIELD_DOMAIN_ID, docDomainName, Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field(WMTIndexer.FIELD_URL, docTimeStringElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field(TweetFields.FIELD_DOCNO, String.valueOf(docIdx++), Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_TIME, docTimeElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
-        doc.add(new Field(TweetFields.FIELD_USERNAME, docUserElt, Field.Store.YES, Field.Index.NOT_ANALYZED));
         
         System.out.println("Agrego nuevo doc ");
         System.out.println(docIdx - 1);
@@ -214,11 +220,11 @@ public class GenderTweetsIndexer {
         if (args.length == 0) {
             args = new String[1];
             System.out.println("Usage: java TrecMblogIndexer <prop-file>");
-            args[0] = "tweets.properties";
+            args[0] = "tweets_1.properties";
         }
 
         try {
-            GenderTweetsIndexer indexer = new GenderTweetsIndexer("tweets.properties");
+            GenderTweetsIndexer indexer = new GenderTweetsIndexer("tweets_1.properties");
             indexer.processAll();
         }
         catch (Exception ex) {
